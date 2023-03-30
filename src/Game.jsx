@@ -1,10 +1,6 @@
 import React, {useEffect, useState} from "react";
 import Board from "./Board";
-import {BattleShip, Carrier, Ship, Empty, Submarine, Cruiser, Destroyer, Interceptor} from "./ships";
-
-
-const INIT = 0;
-const GAME = 1;
+import {BattleShip, Carrier, Empty, Submarine, Cruiser, Destroyer, Interceptor} from "./ships";
 
 
 function getRandomInt(min = 0, max) {
@@ -98,6 +94,22 @@ const getInitialShips = () => [
   new Interceptor('i2'),
 ]
 
+
+const simpleAi = (board, setBoard) => {
+  const r = getRandomInt(0, 9);
+  const c = getRandomInt(0, 9);
+
+  const cell = board[r][c];
+
+  if (cell.isHit || (cell.isHitAt && cell.isHitAt(r, c))) {
+    simpleAi(board, setBoard);
+  }
+
+  cell.hit(r, c);
+  setBoard(b => ({...b}));
+};
+
+
 const Game = () => {
   const [humanBoard, setHumanBoard] = useState({
     board: getInitialBoard(),
@@ -105,8 +117,14 @@ const Game = () => {
     selected: '',
   })
 
-  const {board, ships, selected} = humanBoard;
+  const [aiBoard, setAiBoard] = useState({
+    board: getInitialBoard(),
+    ships: getInitialShips(),
+    selected: '',
+  })
 
+  const {board, ships, selected} = humanBoard;
+  const {board: boardAi, ships: shipsAi} = aiBoard;
 
   const tryPlaceShip = (board, ship) => {
     const row = getRandomInt(0, 9);
@@ -132,7 +150,13 @@ const Game = () => {
     setHumanBoard({board: getInitialBoard(), ships: getInitialShips()});
   }
 
-  const placeRandom = (board) => {
+  const newGame = () => {
+    clear();
+    placeRandom(getInitialBoard(), setHumanBoard);
+    placeRandom(getInitialBoard(), setAiBoard);
+  }
+
+  const placeRandom = (board, setBoard) => {
     let b = board;
     const ships = getInitialShips();
 
@@ -140,12 +164,14 @@ const Game = () => {
       b = tryPlaceShip(b, ship);
     });
 
-    setHumanBoard(hb => ({...hb, board: b, ships}));
+    setBoard(hb => ({...hb, board: b, ships}));
   };
+
 
   useEffect(() => {
     clear();
-    placeRandom(board);
+    placeRandom(board, setHumanBoard);
+    placeRandom(boardAi, setAiBoard);
   }, []);
 
   const setBoard = board => {
@@ -160,32 +186,72 @@ const Game = () => {
     setHumanBoard(hb => ({...hb, ships}));
   }
 
-  useEffect(() => {
-    const i = setInterval(() => {
-      const r = getRandomInt(0, 9);
-      const c = getRandomInt(0, 9);
 
-      const cell = board[r][c];
-      cell.hit(r, c);
-      setHumanBoard(b => ({...b}));
-    }, 100);
+  const setBoardAi = board => {
+    setAiBoard(ab => ({...ab, board}));
+  }
 
-    return () => clearInterval(i);
+  const setShipsAi = ships => {
+    setAiBoard(ab => ({...ab, ships}));
+  }
 
-  }, [board]);
 
+  // useEffect(() => {
+  //   const i = setInterval(() => {
+  //     const r = getRandomInt(0, 9);
+  //     const c = getRandomInt(0, 9);
+
+  //     const cell = board[r][c];
+  //     cell.hit(r, c);
+  //     setHumanBoard(b => ({...b}));
+  //   }, 100);
+
+  //   return () => clearInterval(i);
+
+  // }, [board]);
+
+  const onBoardClickAi = e => {
+    const i = +e.target.dataset.i;
+    const j = +e.target.dataset.j;
+
+    const cell = boardAi[i][j];
+    cell.hit(i, j);
+    setAiBoard(b => ({...b}))
+    simpleAi(board, setHumanBoard);
+
+    if (isLost(ships)) {
+      console.log('human looose');
+    }
+
+    if (isLost(shipsAi)) {
+      console.log('AI looose');
+    }
+  }
+
+  const isLost = ships => {
+    return ships.every(ship => ship.isAllHit());
+  }
 
   return (
     <div>
-      <button onClick={_ => placeRandom(board)}>Random</button>
-      <button onClick={clear}>Clear</button>
+      <div className="flex justify-end mb-5">
+        <button className="bg-white p-10" onClick={_ => newGame(board)}>
+          New game
+        </button>
+      </div>
       <Board
+        visible
         state={humanBoard}
-        getInitialBoard={getInitialBoard}
-        getInitialShips={getInitialShips}
         setBoard={setBoard}
         setSelected={setSelected}
         setShips={setShips}
+      />
+      <div className="mb-5"></div>
+      <Board
+        onBoardClick={onBoardClickAi}
+        state={aiBoard}
+        setBoard={setBoardAi}
+        setShips={setShipsAi}
       />
     </div>
   );

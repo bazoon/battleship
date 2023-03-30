@@ -18,11 +18,15 @@ export class Empty {
   }
 
   hit() {
-
+    this.isHit = true;
   }
 
   clone() {
-    return new Empty();
+    const empty = new Empty();
+    empty.id = this.id;
+    empty.isEmpty = true;
+    empty.isHit = this.isHit;
+    return empty;
   }
 };
 
@@ -76,11 +80,21 @@ export class Ship {
     return new Ship();
   }
 
+  isHitAt = (row, col) => {
+    return this.hits.some(([r, c]) => r === row && c === col);
+  }
+
   hit(row, col) {
-    if (this.coords.some(([r, c]) => r === row && c === col)) {
-      console.log('HIT')
+    const isHit = this.coords.some(([r, c]) => r === row && c === col);
+    const isAlready = this.hits.some(([r, c]) => r === row && c === col);
+
+    if (isHit && !isAlready) {
       this.hits.push([row, col]);
     }
+  }
+
+  isAllHit() {
+    return this.hits.length === this.length;
   }
 
   renderPreview = (setSelected, selected) => {
