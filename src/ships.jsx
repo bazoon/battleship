@@ -165,7 +165,7 @@ export class Submarine extends Ship {
   constructor(id) {
     super(3);
     this.id = id;
-    this.cls = 'bg-red-600 w-[60px] h-[60px]';
+    this.cls = 'bg-cyan-600 w-[60px] h-[60px]';
   }
 
   make() {

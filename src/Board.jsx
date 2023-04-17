@@ -11,7 +11,7 @@ const Cell = ({cell, i, j, visible}) => {
     [cell.cls]: visible || hit,
   });
 
-  const x = <span className="text-orange-400">X</span>
+  const x = <span className="text-white text-2xl">❌</span>
 
   return (
     <div className={cls} data-i={i} data-j={j}>{hit ? x : ''}</div>
